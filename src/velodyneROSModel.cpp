@@ -6,7 +6,7 @@
 #define PI_VAL (3.14159265f)
 
 // if you want to use /velodyne_points topic locally, put it true
-#define _B_LOCALLY false
+#define _B_LOCALLY true
 
 int CVelodyneROSModel::_nextVelodyneHandle=0;
 
@@ -40,7 +40,7 @@ CVelodyneROSModel::CVelodyneROSModel(const int visionSensorHandles[4],float freq
     _pubVelodyne =ROS_server::getPublisher();
 
     //initialize the fixed fields of the output PointCloud2 message
-    _buffer.header.frame_id="odom";
+    _buffer.header.frame_id="velodyne_link";
     _buffer.height=1; //unordered data
     _buffer.fields.resize(3); //convert x/y/z to fields
     _buffer.fields[0].name = "x"; _buffer.fields[1].name = "y"; _buffer.fields[2].name = "z";
@@ -228,9 +228,9 @@ bool CVelodyneROSModel::handle(float dt)
                                         }
                                         else
                                         {
-                                            pts.push_back(a);
-                                            pts.push_back(0.5f*PI_VAL-atan2(p[1],sqrt(p[0]*p[0]+p[2]*p[2])));
-                                            pts.push_back(r);
+                                            pts.push_back(sqrt(p[0]*p[0] + p[1]*p[1]));
+                                            pts.push_back(atan2(p[1], p[0]));
+                                            pts.push_back(p[2]);
                                         }
                                         if (_displayPts)
                                         {
@@ -378,7 +378,7 @@ void CVelodyneROSModel::addPointsToBuffer(std::vector<float> & pts, sensor_msgs:
     buff.width += n_points;
     buff.row_step = buff.point_step*buff.width;
     buff.data.resize(buff.row_step*buff.height);
-    buff.header.stamp=ros::Time::now();
+    buff.header.stamp=ros::Time(0);
 
     //copy data points
     for (int cp = 0; cp < n_points; ++cp)
